@@ -18,6 +18,9 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
 
+import static com.scottyab.rootbeer.Const.BINARY_BUSYBOX;
+import static com.scottyab.rootbeer.Const.BINARY_SU;
+
 /**
  * A simple root checker that gives an *indication* if the device is rooted or not.
  * Disclaimer: **root==god**, so there's no 100% way to check for root.
@@ -40,20 +43,29 @@ public class RootBeer {
      */
     public boolean isRooted() {
 
-        return detectRootManagementApps() || detectPotentiallyDangerousApps() || checkForBinary("su")
-                || checkForBinary("busybox") || checkForDangerousProps() || checkForRWPaths()
+        return detectRootManagementApps() || detectPotentiallyDangerousApps() || checkForBinary(BINARY_SU)
+                || checkForDangerousProps() || checkForRWPaths()
                 || detectTestKeys() || checkSuExists() || checkForRootNative() || checkForMagiskBinary();
     }
 
     /**
-     * Run all the checks apart from checking for the busybox binary. This is because it can sometimes be a false positive
-     * as some manufacturers leave the binary in production builds.
-     * @return true, we think there's a good *indication* of root | false good *indication* of no root (could still be cloaked)
+     * @deprecated This method is deprecated as checking without the busybox binary is now the
+     * default. This is because many manufacturers leave this binary on production devices.
      */
     public boolean isRootedWithoutBusyBoxCheck() {
+        return isRooted();
+    }
 
-        return detectRootManagementApps() || detectPotentiallyDangerousApps() || checkForBinary("su")
-                || checkForDangerousProps() || checkForRWPaths()
+    /**
+     * Run all the checks apart including checking for the busybox binary.
+     * Warning: Busybox binary is not always an indication of root, many manufacturers leave this
+     * binary on production devices
+     * @return true, we think there's a good *indication* of root | false good *indication* of no root (could still be cloaked)
+     */
+    public boolean isRootedWithBusyBoxCheck() {
+
+        return detectRootManagementApps() || detectPotentiallyDangerousApps() || checkForBinary(BINARY_SU)
+                || checkForBinary(BINARY_BUSYBOX) || checkForDangerousProps() || checkForRWPaths()
                 || detectTestKeys() || checkSuExists() || checkForRootNative() || checkForMagiskBinary();
     }
 
@@ -84,8 +96,7 @@ public class RootBeer {
     public boolean detectRootManagementApps(String[] additionalRootManagementApps) {
 
         // Create a list of package names to iterate over from constants any others provided
-        ArrayList<String> packages = new ArrayList<>();
-        packages.addAll(Arrays.asList(Const.knownRootAppsPackages));
+        ArrayList<String> packages = new ArrayList<>(Arrays.asList(Const.knownRootAppsPackages));
         if (additionalRootManagementApps!=null && additionalRootManagementApps.length>0){
             packages.addAll(Arrays.asList(additionalRootManagementApps));
         }
@@ -135,8 +146,7 @@ public class RootBeer {
     public boolean detectRootCloakingApps(String[] additionalRootCloakingApps) {
 
         // Create a list of package names to iterate over from constants any others provided
-        ArrayList<String> packages = new ArrayList<>();
-        packages.addAll(Arrays.asList(Const.knownRootCloakingPackages));
+        ArrayList<String> packages = new ArrayList<>(Arrays.asList(Const.knownRootCloakingPackages));
         if (additionalRootCloakingApps!=null && additionalRootCloakingApps.length>0){
             packages.addAll(Arrays.asList(additionalRootCloakingApps));
         }
@@ -148,7 +158,7 @@ public class RootBeer {
      * @return true if found
      */
     public boolean checkForSuBinary(){
-        return checkForBinary("su");
+        return checkForBinary(BINARY_SU);
     }
 
     /**
@@ -162,7 +172,7 @@ public class RootBeer {
      * @return true if found
      */
     public boolean checkForBusyBoxBinary(){
-        return checkForBinary("busybox");
+        return checkForBinary(BINARY_BUSYBOX);
     }
 
     /**
@@ -172,7 +182,7 @@ public class RootBeer {
      */
     public boolean checkForBinary(String filename) {
 
-        String[] pathsArray = Const.suPaths;
+        String[] pathsArray = Const.getPaths();
 
         boolean result = false;
 
@@ -205,7 +215,7 @@ public class RootBeer {
             String propVal = new Scanner(inputstream).useDelimiter("\\A").next();
             return propVal.split("\n");
         } catch (IOException | NoSuchElementException e) {
-            e.printStackTrace();
+            QLog.e(e);
             return null;
         }
     }
@@ -217,7 +227,7 @@ public class RootBeer {
             String propVal = new Scanner(inputstream).useDelimiter("\\A").next();
             return propVal.split("\n");
         } catch (IOException | NoSuchElementException e) {
-            e.printStackTrace();
+            QLog.e(e);
             return null;
         }
     }
@@ -262,7 +272,7 @@ public class RootBeer {
 
         if (lines == null){
             // Could not read, assume false;
-            return result;
+            return false;
         }
 
         for (String line : lines) {
@@ -281,7 +291,7 @@ public class RootBeer {
     }
 
     /**
-     * When you're root you can change the permissions on common system directories, this method checks if any of these patha Const.pathsThatShouldNotBeWrtiable are writable.
+     * When you're root you can change the permissions on common system directories, this method checks if any of these patha Const.pathsThatShouldNotBeWritable are writable.
      * @return true if one of the dir is writable
      */
     public boolean checkForRWPaths() {
@@ -292,7 +302,7 @@ public class RootBeer {
 
         if (lines == null){
             // Could not read, assume false;
-            return result;
+            return false;
         }
 
         for (String line : lines) {
@@ -309,7 +319,7 @@ public class RootBeer {
             String mountPoint = args[1];
             String mountOptions = args[3];
 
-            for(String pathToCheck: Const.pathsThatShouldNotBeWrtiable) {
+            for(String pathToCheck: Const.pathsThatShouldNotBeWritable) {
                 if (mountPoint.equalsIgnoreCase(pathToCheck)) {
 
                     // Split options out and compare against "rw" to avoid false positives
@@ -336,7 +346,7 @@ public class RootBeer {
     public boolean checkSuExists() {
         Process process = null;
         try {
-            process = Runtime.getRuntime().exec(new String[] { "which", "su" });
+            process = Runtime.getRuntime().exec(new String[] { "which", BINARY_SU });
             BufferedReader in = new BufferedReader(new InputStreamReader(process.getInputStream()));
             return in.readLine() != null;
         } catch (Throwable t) {
@@ -386,16 +396,17 @@ public class RootBeer {
             return false;
         }
 
-        String binaryName = "su";
-        String[] paths = new String[Const.suPaths.length];
-        for (int i = 0; i < paths.length; i++) {
-            paths[i] = Const.suPaths[i]+binaryName;
+        String[] paths = Const.getPaths();
+
+        String[] checkPaths = new String[paths.length];
+        for (int i = 0; i < checkPaths.length; i++) {
+            checkPaths[i] = paths[i]+ BINARY_SU;
         }
 
         RootBeerNative rootBeerNative = new RootBeerNative();
         try {
             rootBeerNative.setLogDebugMessages(loggingEnabled);
-            return rootBeerNative.checkForRoot(paths) > 0;
+            return rootBeerNative.checkForRoot(checkPaths) > 0;
         } catch (UnsatisfiedLinkError e) {
             return false;
         }

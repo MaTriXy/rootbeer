@@ -1,9 +1,15 @@
 package com.scottyab.rootbeer;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+
 /**
  * Created by mat on 19/06/15.
  */
 public final class Const {
+
+    public static final String BINARY_SU = "su";
+    public static final String BINARY_BUSYBOX = "busybox";
 
     private Const() throws InstantiationException {
         throw new InstantiationException("This class is not for instantiation");
@@ -16,7 +22,12 @@ public final class Const {
             "com.koushikdutta.superuser",
             "com.thirdparty.superuser",
             "com.yellowes.su",
-            "com.topjohnwu.magisk"
+            "com.topjohnwu.magisk",
+            "com.kingroot.kinguser",
+            "com.kingo.root",
+            "com.smedialink.oneclickroot",
+            "com.zhiqupk.root.global",
+            "com.alephzain.framaroot"
     };
 
     public static final String[] knownDangerousAppsPackages = {
@@ -42,6 +53,7 @@ public final class Const {
             "com.formyhm.hideroot"
     };
 
+    // These must end with a /
     public static final String[] suPaths ={
             "/data/local/",
             "/data/local/bin/",
@@ -54,25 +66,53 @@ public final class Const {
             "/system/sd/xbin/",
             "/system/usr/we-need-root/",
             "/system/xbin/",
-            "/cache",
-            "/data",
-            "/dev"
+            "/cache/",
+            "/data/",
+            "/dev/"
     };
 
 
-    public static final String[] pathsThatShouldNotBeWrtiable = {
+    public static final String[] pathsThatShouldNotBeWritable = {
             "/system",
             "/system/bin",
             "/system/sbin",
             "/system/xbin",
             "/vendor/bin",
-            //"/sys",
             "/sbin",
             "/etc",
+            //"/sys",
             //"/proc",
             //"/dev"
     };
 
+    /**
+     * Get a list of paths to check for binaries
+     *
+     * @return List of paths to check, using a combination of a static list and those paths
+     * listed in the PATH environment variable.
+     */
+    static String[] getPaths(){
+        ArrayList<String> paths = new ArrayList<>(Arrays.asList(suPaths));
 
+        String sysPaths = System.getenv("PATH");
+
+        // If we can't get the path variable just return the static paths
+        if (sysPaths == null || "".equals(sysPaths)){
+            return paths.toArray(new String[0]);
+        }
+
+        for (String path : sysPaths.split(":")){
+
+            if (!path.endsWith("/")){
+                path = path + '/';
+            }
+
+            if (!paths.contains(path)){
+                paths.add(path);
+            }
+        }
+
+        return paths.toArray(new String[0]);
+    }
 
 }
