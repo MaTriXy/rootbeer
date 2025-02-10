@@ -3,19 +3,16 @@ package com.scottyab.rootbeer;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-/**
- * Created by mat on 19/06/15.
- */
-public final class Const {
+final class Const {
 
-    public static final String BINARY_SU = "su";
-    public static final String BINARY_BUSYBOX = "busybox";
+    static final String BINARY_SU = "su";
+    static final String BINARY_BUSYBOX = "busybox";
 
     private Const() throws InstantiationException {
         throw new InstantiationException("This class is not for instantiation");
     }
 
-    public static final String[] knownRootAppsPackages = {
+    static final String[] knownRootAppsPackages = {
             "com.noshufou.android.su",
             "com.noshufou.android.su.elite",
             "eu.chainfire.supersu",
@@ -38,7 +35,26 @@ public final class Const {
             "com.ramdroid.appquarantine",
             "com.ramdroid.appquarantinepro",
             "com.android.vending.billing.InAppBillingService.COIN",
-            "com.chelpus.luckypatcher"
+            "com.android.vending.billing.InAppBillingService.LUCK",
+            "com.chelpus.luckypatcher",
+            "com.blackmartalpha",
+            "org.blackmart.market",
+            "com.allinone.free",
+            "com.repodroid.app",
+            "org.creeplays.hack",
+            "com.baseappfull.fwd",
+            "com.zmapp",
+            "com.dv.marketmod.installer",
+            "org.mobilism.android",
+            "com.android.wp.net.log",
+            "com.android.camera.update",
+            "cc.madkite.freedom",
+            "com.solohsu.android.edxp.manager",
+            "org.meowcat.edxposed.manager",
+            "com.xmodgame",
+            "com.cih.game_cih",
+            "com.charles.lpoqasert",
+            "catch_.me_.if_.you_.can_"
     };
 
     public static final String[] knownRootCloakingPackages = {
@@ -54,7 +70,7 @@ public final class Const {
     };
 
     // These must end with a /
-    public static final String[] suPaths ={
+    private static final String[] suPaths = {
             "/data/local/",
             "/data/local/bin/",
             "/data/local/xbin/",
@@ -72,7 +88,7 @@ public final class Const {
     };
 
 
-    public static final String[] pathsThatShouldNotBeWritable = {
+    static final String[] pathsThatShouldNotBeWritable = {
             "/system",
             "/system/bin",
             "/system/sbin",
@@ -91,23 +107,23 @@ public final class Const {
      * @return List of paths to check, using a combination of a static list and those paths
      * listed in the PATH environment variable.
      */
-    static String[] getPaths(){
+    static String[] getPaths() {
         ArrayList<String> paths = new ArrayList<>(Arrays.asList(suPaths));
 
         String sysPaths = System.getenv("PATH");
 
         // If we can't get the path variable just return the static paths
-        if (sysPaths == null || "".equals(sysPaths)){
+        if (sysPaths == null || "".equals(sysPaths)) {
             return paths.toArray(new String[0]);
         }
 
-        for (String path : sysPaths.split(":")){
+        for (String path : sysPaths.split(":")) {
 
-            if (!path.endsWith("/")){
+            if (!path.endsWith("/")) {
                 path = path + '/';
             }
 
-            if (!paths.contains(path)){
+            if (!paths.contains(path)) {
                 paths.add(path);
             }
         }
